@@ -1,7 +1,7 @@
 {******************************************************************************}
 {                                                                              }
 {  Delphi JOSE Library                                                         }
-{  Copyright (c) 2015-2021 Paolo Rossi                                         }
+{  Copyright (c) 2015 Paolo Rossi                                              }
 {  https://github.com/paolo-rossi/delphi-jose-jwt                              }
 {                                                                              }
 {******************************************************************************}
@@ -20,6 +20,8 @@
 {                                                                              }
 {******************************************************************************}
 unit JOSE.Core.Builder;
+
+{$I ..\JOSE.inc}
 
 interface
 
@@ -42,6 +44,8 @@ type
   private
     class function DeserializeVerify(AKey: TJWK; const ACompactToken: TJOSEBytes; AVerify: Boolean; AClaimsClass: TJWTClaimsClass): TJWT;
   public
+    class function CheckCompactToken(const AValue: TJOSEBytes): Boolean; static;
+
     class function Sign(AKey: TJWK; AAlg: TJOSEAlgorithmId; AToken: TJWT): TJOSEBytes;
     class function Verify(AKey: TJWK; const ACompactToken: TJOSEBytes; AClaimsClass: TJWTClaimsClass = nil): TJWT; overload;
     class function Verify(AKey: TJOSEBytes; const ACompactToken: TJOSEBytes; AClaimsClass: TJWTClaimsClass = nil): TJWT; overload;
@@ -60,7 +64,6 @@ type
     class function SHA512CompactToken(AKey: TJOSEBytes; AToken: TJWT): TJOSEBytes;
   end;
 
-
 implementation
 
 uses
@@ -68,6 +71,11 @@ uses
   System.StrUtils;
 
 { TJOSE }
+
+class function TJOSE.CheckCompactToken(const AValue: TJOSEBytes): Boolean;
+begin
+  Result := TJWS.CheckCompactToken(AValue);
+end;
 
 class function TJOSE.DeserializeCompact(AKey: TJOSEBytes; const ACompactToken: TJOSEBytes): TJWT;
 var

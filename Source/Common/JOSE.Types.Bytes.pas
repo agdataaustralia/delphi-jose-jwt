@@ -1,7 +1,7 @@
 {******************************************************************************}
 {                                                                              }
 {  Delphi JOSE Library                                                         }
-{  Copyright (c) 2015-2021 Paolo Rossi                                         }
+{  Copyright (c) 2015 Paolo Rossi                                              }
 {  https://github.com/paolo-rossi/delphi-jose-jwt                              }
 {                                                                              }
 {******************************************************************************}
@@ -24,6 +24,8 @@
 ///   Handy TBytes replacement
 /// </summary>
 unit JOSE.Types.Bytes;
+
+{$I ..\JOSE.inc}
 
 interface
 
@@ -54,6 +56,7 @@ type
 
     class function Empty: TJOSEBytes; static;
     class function RandomBytes(ANumberOfBytes: Integer): TJOSEBytes; static;
+    class function IsValidString(const AValue: TJOSEBytes): Boolean; static;
 
     function IsEmpty: Boolean;
     function Size: Integer;
@@ -197,6 +200,18 @@ end;
 function TJOSEBytes.IsEmpty: Boolean;
 begin
   Result := Size = 0;
+end;
+
+class function TJOSEBytes.IsValidString(const AValue: TJOSEBytes): Boolean;
+var
+  LStr: string;
+begin
+  try
+    LStr := AValue.AsString;
+  except
+    Exit(False);
+  end;
+  Result := True;
 end;
 
 class function TJOSEBytes.RandomBytes(ANumberOfBytes: Integer): TJOSEBytes;

@@ -1,7 +1,7 @@
 {******************************************************************************}
 {                                                                              }
 {  Delphi JOSE Library                                                         }
-{  Copyright (c) 2015-2021 Paolo Rossi                                         }
+{  Copyright (c) 2015 Paolo Rossi                                              }
 {  https://github.com/paolo-rossi/delphi-jose-jwt                              }
 {                                                                              }
 {******************************************************************************}
@@ -24,6 +24,8 @@
 ///   Utility class to encode and decode a JWT
 /// </summary>
 unit JOSE.Consumer.Validators;
+
+{$I ..\JOSE.inc}
 
 interface
 
@@ -152,10 +154,10 @@ begin
 
         Result := Result + ' Expected ';
 
-        if Length(LClaims.AudienceArray) = 1 then
-          Result := Result + '[' + LClaims.Audience + ']'
+        if AAudience.Size = 1 then
+          Result := Result + '[' + AAudience.ToString + ']'
         else
-          Result := Result + 'one of [' + LClaims.Audience + ']';
+          Result := Result + 'one of [' + AAudience.ToString + ']';
 
         Result := Result +  ' as aud value.';
       end;

@@ -1,7 +1,7 @@
 {******************************************************************************}
 {                                                                              }
 {  Delphi JOSE Library                                                         }
-{  Copyright (c) 2015-2021 Paolo Rossi                                         }
+{  Copyright (c) 2015 Paolo Rossi                                              }
 {  https://github.com/paolo-rossi/delphi-jose-jwt                              }
 {                                                                              }
 {******************************************************************************}
@@ -22,7 +22,11 @@
 
 unit JOSE.Signing.ECDSA;
 
+{$I ..\JOSE.inc}
+
 interface
+
+{$IFDEF RSA_SIGNING}
 
 uses
   System.SysUtils,
@@ -61,8 +65,11 @@ type
     class function VerifyPrivateKey(const AKey: TBytes): Boolean;
   end;
 
+{$ENDIF}
 
 implementation
+
+{$IFDEF RSA_SIGNING}
 
 { TECDSAAlgorithmHelper }
 
@@ -241,7 +248,7 @@ begin
   LKeyLength := Length(ASignature) div 2;
 
   JoseSSL.BN_bin2bn(Pointer(ASignature), LKeyLength, Result.r);
-  JoseSSL.BN_bin2bn(Pointer(Integer(ASignature) + LKeyLength), LKeyLength, Result.s);
+  JoseSSL.BN_bin2bn(Pointer(NativeInt(ASignature) + LKeyLength), LKeyLength, Result.s);
 end;
 
 class function TECDSA.Sig2OctetSequence(ASignature: PECDSA_SIG; AAlg: TECDSAAlgorithm): TBytes;
@@ -263,8 +270,8 @@ begin
   SetLength(Result, LSigLength);
   FillChar(Result[0], LSigLength, #0);
 
-  JoseSSL.BN_bn2bin(ASignature.r, Pointer(Integer(Result) + (LSigLength div 2) - LRLength));
-  JoseSSL.BN_bn2bin(ASignature.s, Pointer(Integer(Result) + LSigLength-LSLength));
+  JoseSSL.BN_bn2bin(ASignature.r, Pointer(NativeInt(Result) + (LSigLength div 2) - LRLength));
+  JoseSSL.BN_bn2bin(ASignature.s, Pointer(NativeInt(Result) + LSigLength - LSLength));
 end;
 
 class function TECDSA.Verify(const AInput, ASignature, APublicKey: TBytes; AAlg: TECDSAAlgorithm): Boolean;
@@ -335,5 +342,7 @@ begin
     EVP_PKEY_free(LKey);
   end;
 end;
+
+{$ENDIF}
 
 end.

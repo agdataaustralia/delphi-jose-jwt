@@ -1,7 +1,7 @@
 {******************************************************************************}
 {                                                                              }
 {  Delphi JOSE Library                                                         }
-{  Copyright (c) 2015-2021 Paolo Rossi                                         }
+{  Copyright (c) 2015 Paolo Rossi                                              }
 {  https://github.com/paolo-rossi/delphi-jose-jwt                              }
 {                                                                              }
 {******************************************************************************}
@@ -22,6 +22,8 @@
 
 unit JOSE.Types.Utils;
 
+{$I ..\JOSE.inc}
+
 interface
 
 uses
@@ -31,8 +33,7 @@ type
   TJOSEUtils = class
     class procedure ArrayPush(const ASource: TBytes; var ADest: TBytes; ACount: Integer);
     class function DirectoryUp(const ADirectory: string; ALevel: Integer = 1): string;
-    class function BinToSingleHex(ABuffer: TBytes): string; overload;
-    class function BinToSingleHex(ABuffer: Pointer; ABufferLen: Integer): string; overload;
+    class function BinToSingleHex(ABuffer: TBytes): string;
   end;
 
 implementation
@@ -55,21 +56,6 @@ begin
     ADest[LIndex + LLen] := ASource[LIndex];
 end;
 
-class function TJOSEUtils.BinToSingleHex(ABuffer: Pointer; ABufferLen: Integer): string;
-const
-  Convert: array[0..15] of AnsiChar = '0123456789ABCDEF';
-var
-  LIndex: Integer;
-  LByte: PByte;
-begin
-  Result := '';
-  for LIndex := 0 to ABufferLen - 1 do
-  begin
-    LByte := Pointer(Integer(ABuffer) + LIndex);
-    Result := Result + string(Convert[(LByte^) and $F]);
-  end;
-end;
-
 class function TJOSEUtils.DirectoryUp(const ADirectory: string; ALevel: Integer): string;
 var
   LIndex: Integer;
@@ -81,14 +67,14 @@ end;
 
 class function TJOSEUtils.BinToSingleHex(ABuffer: TBytes): string;
 const
-  Convert: array[0..15] of AnsiChar = '0123456789ABCDEF';
+  Convert: array[0..15] of string = ('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F');
 var
   LIndex: Integer;
 begin
   Result := '';
   for LIndex := 0 to Length(ABuffer) - 1 do
   begin
-    Result := Result + string(Convert[Byte(ABuffer[LIndex]) and $F]);
+    Result := Result + Convert[Byte(ABuffer[LIndex]) and $F];
   end;
 end;
 

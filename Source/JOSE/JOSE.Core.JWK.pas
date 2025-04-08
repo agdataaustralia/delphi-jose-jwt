@@ -1,7 +1,7 @@
 {******************************************************************************}
 {                                                                              }
 {  Delphi JOSE Library                                                         }
-{  Copyright (c) 2015-2021 Paolo Rossi                                         }
+{  Copyright (c) 2015 Paolo Rossi                                              }
 {  https://github.com/paolo-rossi/delphi-jose-jwt                              }
 {                                                                              }
 {******************************************************************************}
@@ -21,14 +21,20 @@
 {******************************************************************************}
 
 /// <summary>
-///   JSON Web Key (JWK) RFC implementation (partial)
+///   JSON Web Key (JWK) RFC implementation The JWK is not (yet) implemented,
+///   this unit contains only a small utility class to work with cryptographic
+///   keys in Delphi
 /// </summary>
 /// <seealso href="https://tools.ietf.org/html/rfc7517">
 ///   JWK RFC Document
 /// </seealso>
 unit JOSE.Core.JWK;
 
+{$I ..\JOSE.inc}
+
 interface
+
+{$SCOPEDENUMS ON}
 
 uses
   System.SysUtils,
@@ -37,6 +43,8 @@ uses
   JOSE.Encoding.Base64;
 
 type
+  TKeyType = (Symmetric, Asymmetric);
+
   /// <summary>
   ///   Base class for the Key in a JWS process
   /// </summary>
@@ -55,14 +63,18 @@ type
   private
     FPrivateKey: TJWK;
     FPublicKey: TJWK;
+    FKeyType: TKeyType;
   public
     constructor Create; overload;
     constructor Create(const APublicKey, APrivateKey: TJOSEBytes); overload;
     destructor Destroy; override;
 
+    function Clone: TKeyPair;
+
     procedure SetSymmetricKey(const ASecret: TJOSEBytes);
     procedure SetAsymmetricKeys(const APublicKey, APrivateKey: TJOSEBytes);
 
+    property KeyType: TKeyType read FKeyType write FKeyType;
     property PrivateKey: TJWK read FPrivateKey write FPrivateKey;
     property PublicKey: TJWK read FPublicKey write FPublicKey;
   end;
@@ -85,8 +97,18 @@ begin
   FPublicKey := TJWK.Create();
 end;
 
+function TKeyPair.Clone: TKeyPair;
+begin
+  Result := TKeyPair.Create(FPublicKey.Key, FPrivateKey.Key);
+end;
+
 constructor TKeyPair.Create(const APublicKey, APrivateKey: TJOSEBytes);
 begin
+  if APublicKey = APrivateKey then
+    FKeyType := TKeyType.Symmetric
+  else
+    FKeyType := TKeyType.Asymmetric;
+
   FPublicKey := TJWK.Create(APublicKey);
   FPrivateKey := TJWK.Create(APrivateKey);
 end;
@@ -100,12 +122,14 @@ end;
 
 procedure TKeyPair.SetAsymmetricKeys(const APublicKey, APrivateKey: TJOSEBytes);
 begin
+  FKeyType := TKeyType.Asymmetric;
   FPublicKey.Key := APublicKey;
   FPrivateKey.Key := APrivateKey;
 end;
 
 procedure TKeyPair.SetSymmetricKey(const ASecret: TJOSEBytes);
 begin
+  FKeyType := TKeyType.Symmetric;
   FPublicKey.Key := ASecret;
   FPrivateKey.Key := ASecret;
 end;

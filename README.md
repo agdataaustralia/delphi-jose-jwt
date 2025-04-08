@@ -8,6 +8,17 @@
   </a>
 </p>
 
+## What is Delphi JOSE and JWT Library
+
+![Top language](https://img.shields.io/github/languages/top/paolo-rossi/delphi-jose-jwt)
+[![GitHub license](https://img.shields.io/github/license/paolo-rossi/delphi-jose-jwt)](https://github.com/paolo-rossi/delphi-jose-jwt/blob/master/LICENSE)
+[![GitHub issues](https://img.shields.io/github/issues/paolo-rossi/delphi-jose-jwt)](https://github.com/paolo-rossi/delphi-jose-jwt/issues)
+[![GitHub PR](https://img.shields.io/github/issues-pr/paolo-rossi/delphi-jose-jwt)](https://github.com/paolo-rossi/delphi-jose-jwt/pulls)
+[![GitHub release](https://img.shields.io/github/release/paolo-rossi/delphi-jose-jwt)](https://github.com/paolo-rossi/delphi-jose-jwt/release)
+![GitHub commit activity](https://img.shields.io/github/commit-activity/m/paolo-rossi/delphi-jose-jwt)
+![GitHub last commit](https://img.shields.io/github/last-commit/paolo-rossi/delphi-jose-jwt)
+![GitHub contributors](https://img.shields.io/github/contributors-anon/paolo-rossi/delphi-jose-jwt)
+
 [Delphi](https://www.embarcadero.com/products/delphi) implementation of JWT (JSON Web Token) and the JOSE (JSON Object Signing and Encryption) specification suite. This library supports the JWS (JWE support is planned) compact serializations with several JOSE algorithms.
 
 ![Image of Delphi-JOSE Demo](https://user-images.githubusercontent.com/4686497/103456073-1485a980-4cf3-11eb-8bac-295198ba508b.png)
@@ -15,17 +26,17 @@
 
 ## :books: Articles about using Delphi-JOSE
 
-- [JWT authentication with Delphi. Part 1](http://blog.paolorossi.net/2017/04/27/jwt-authentication-with-delphi) - JWT and authentication technologies introduction (using Delphi)
-- [JWT authentication with Delphi. Part 2](http://blog.paolorossi.net/2017/05/17/jwt-authentication-with-delphi-part-2) - Understanding the JSON Web Token
-- [JWT authentication with Delphi. Part 3](http://blog.paolorossi.net/2018/08/27/jwt-authentication-with-delphi-part-3) - Using Delphi-JOSE-JWT to generate and verify JWT tokens
-- [JWT authentication with Delphi. Part 4](http://blog.paolorossi.net/2019/07/15/jwt-authentication-with-delphi-part-4) - Using JWT consumer to validate JWT's claims
+- [JWT authentication with Delphi. Part 1](https://blog.paolorossi.net/post/jwt-authentication-with-delphi-part-1/) - JWT and authentication technologies introduction (using Delphi)
+- [JWT authentication with Delphi. Part 2](https://blog.paolorossi.net/post/jwt-authentication-with-delphi-part-2/) - Understanding the JSON Web Token
+- [JWT authentication with Delphi. Part 3](https://blog.paolorossi.net/post/jwt-authentication-with-delphi-part-3/) - Using Delphi-JOSE-JWT to generate and verify JWT tokens
+- [JWT authentication with Delphi. Part 4](https://blog.paolorossi.net/post/jwt-authentication-with-delphi-part-4/) - Using JWT consumer to validate JWT's claims
 
 ## :warning: Important: OpenSSL requirements
 
 #### HMAC using SHA algorithm
 Prior to Delphi 10 Seattle the the HMAC-SHA algorithm uses OpenSSL through the Indy library, so in order to generate the token you should have the OpenSSL DLLs in your server system.
 
-In Delphi 10 Seattle or newer Delphi versions the HMAC algorithm is also is the System.Hash unit so OpenSSL is not needed.
+In Delphi 10 Seattle or newer Delphi versions the HMAC algorithm is also in the System.Hash unit so OpenSSL is not needed.
 
 #### HMAC using RSA or ECDSA algorithm
 The HMAC-RSA(ECDSA) algorithm uses necessarily OpenSSL so if you plan to use these algorithms to sign your token you have to download and deploy OpenSSL (on the server).
@@ -66,6 +77,9 @@ If you need the OpenSSL library on the server, you can download the package dire
 |  `jti`       | ✔️               |
 |  `typ`       | ✔️               |
 
+#### Easy to use classes for compact token productiom
+- Easy to use `TJOSEProducer` and `TJOSEProducerBuilder` (alias `TJOSEProcess`) classes to build a new compact token with many options
+
 #### Easy to use classes for custom validation
 
 - Easy to use `TJOSEConsumer` and `TJOSEConsumerBuilder` classes to validate token with a fine granularity
@@ -75,7 +89,7 @@ If you need the OpenSSL library on the server, you can download the package dire
 
 | _Algorithms_ | _Supported_      | 
 | -------------| -----------      |
-|  `None`      | ✔️ don't use! 💀 |
+|  `None`      | ✔️ don't use it! 💀 |
 |  `HS256`     | ✔️               |
 |  `HS384`     | ✔️               |
 |  `HS512`     | ✔️               |
@@ -99,7 +113,7 @@ If you need the OpenSSL library on the server, you can download the package dire
 ## :wrench: Todo
 
 ##### Features
-- JWE support
+- JWE support (there is partial implementation in [this PR](https://github.com/paolo-rossi/delphi-jose-jwt/pull/84))
 - Support of other crypto libraries (TMS Cryptography Pack, etc...)
 
 ##### Code
@@ -107,7 +121,7 @@ If you need the OpenSSL library on the server, you can download the package dire
 - More examples
 
 ## :cookie: Prerequisite
-This library has been tested with **Delphi 10.4 Sydney**, **Delphi 10.3 Rio**, **Delphi 10.2 Tokyo**, **Delphi 10.1 Berlin**, and **Delphi 10.0 Seattle** but with some work it should compile with **DXE6 and higher** but I have not tried or tested this, if you succeed in this task I will be happy to create a branch of your work!
+This library has been tested with **Delphi 12 Athens**, **Delphi 11 Alexandria**, **Delphi 10.4 Sydney**, **Delphi 10.3 Rio**, **Delphi 10.2 Tokyo** but with some work it should compile with **DXE6 and higher** but I have not tried or tested this, if you succeed in this task I will be happy to create a branch of your work!
 
 #### Libraries/Units dependencies
 This library has no dependencies on external libraries/units.
@@ -141,9 +155,37 @@ $ boss install github.com/paolo-rossi/delphi-jose-jwt
 To create a token, simply create an instance of the `TJWT` class and set the properties (claims).
 
 #### Using TJOSE utility class
-The easiest way to serialize, deserialize, verify a token is to use the `TJOSE`utility class:
+The easiest way to build a JWT token (compact representation) is to use the `IJOSEProducer` interface:
 
 ```delphi
+uses
+  JOSE.Producer;
+
+var
+  LResult: string;
+begin
+  LResult := TJOSEProcess.New
+    .SetIssuer('Delphi JOSE Library')
+    .SetIssuedAt(Now)
+    .SetExpiration(Now + 1)
+    .SetAlgorithm(LAlg)
+    .SetKey(TJOSEAlgorithmId.HS256)
+    .Build
+    .GetCompactToken
+  ;
+
+  memoCompact.Lines.Add(LResult);
+end;
+```
+
+#### Using TJOSE utility class
+Another way to serialize, deserialize, verify a token is to use the `TJOSE`utility class:
+
+```delphi
+uses
+  JOSE.Core.JWT,
+  JOSE.Core.Builder;
+
 var
   LToken: TJWT;
   LCompactToken: string;

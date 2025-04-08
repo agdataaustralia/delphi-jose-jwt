@@ -1,7 +1,7 @@
 {******************************************************************************}
 {                                                                              }
 {  Delphi JOSE Library                                                         }
-{  Copyright (c) 2015-2021 Paolo Rossi                                         }
+{  Copyright (c) 2015 Paolo Rossi                                              }
 {  https://github.com/paolo-rossi/delphi-jose-jwt                              }
 {                                                                              }
 {******************************************************************************}
@@ -22,7 +22,11 @@
 
 unit JOSE.Signing.RSA;
 
+{$I ..\JOSE.inc}
+
 interface
+
+{$IFDEF RSA_SIGNING}
 
 uses
   System.SysUtils,
@@ -58,7 +62,11 @@ type
     class function VerifyPrivateKey(const AKey: TBytes): Boolean;
   end;
 
+{$ENDIF}
+
 implementation
+
+{$IFDEF RSA_SIGNING}
 
 { TRSAAlgorithmHelper }
 
@@ -76,6 +84,7 @@ end;
 
 function TRSAAlgorithmHelper.ToString: string;
 begin
+  Result := '';
   case Self of
     RS256: Result := 'RS256';
     RS384: Result := 'RS384';
@@ -180,15 +189,25 @@ end;
 class function TRSA.LoadPublicKey(const AKey: TBytes): PRSA;
 var
   LBio: PBIO;
+  LPubKey: TBytes;
 begin
   // Load Public RSA Key into RSA object
   LBio := BIO_new(BIO_s_mem);
   try
-    BIO_write(LBio, @AKey[0], Length(AKey));
-    if CompareMem(@PEM_PUBKEY_PKCS1[1], @AKey[0], Length(PEM_PUBKEY_PKCS1)) then
-      Result := PEM_read_bio_RSAPublicKey(LBio, nil, nil, nil)
-    else
+    if CompareMem(@PEM_X509_CERTIFICATE[0], @AKey[0], Length(PEM_X509_CERTIFICATE)) then
+    begin
+      LPubKey := Self.PublicKeyFromCertificate(AKey);
+      BIO_write(LBio, @LPubKey[0], Length(LPubKey));
       Result := JoseSSL.PEM_read_bio_RSA_PUBKEY(LBio, nil, nil, nil);
+    end else
+    begin
+      BIO_write(LBio, @AKey[0], Length(AKey));
+      if CompareMem(@PEM_PUBKEY_PKCS1[0], @AKey[0], Length(PEM_PUBKEY_PKCS1)) then
+        Result := PEM_read_bio_RSAPublicKey(LBio, nil, nil, nil)
+      else
+        Result := JoseSSL.PEM_read_bio_RSA_PUBKEY(LBio, nil, nil, nil);
+    end;
+
     if Result = nil then
       raise ESignException.Create('[RSA] Unable to load public key: ' + JOSESSL.GetLastError);
   finally
@@ -267,17 +286,27 @@ class function TRSA.VerifyPublicKey(const AKey: TBytes): Boolean;
 var
   LBio: PBIO;
   LRsa: PRSA;
+  LPubKey: TBytes;
 begin
   LoadOpenSSL;
 
   // Load Public RSA Key
   LBio := BIO_new(BIO_s_mem);
   try
-    BIO_write(LBio, @AKey[0], Length(AKey));
-    if CompareMem(@PEM_PUBKEY_PKCS1[1], @AKey[0], Length(PEM_PUBKEY_PKCS1)) then
-      LRsa := PEM_read_bio_RSAPublicKey(LBio, nil, nil, nil)
-    else
+    if CompareMem(@PEM_X509_CERTIFICATE[0], @AKey[0], Length(PEM_X509_CERTIFICATE)) then
+    begin
+      LPubKey := Self.PublicKeyFromCertificate(AKey);
+      BIO_write(LBio, @LPubKey[0], Length(LPubKey));
       LRsa := JoseSSL.PEM_read_bio_RSA_PUBKEY(LBio, nil, nil, nil);
+    end else
+    begin
+      BIO_write(LBio, @AKey[0], Length(AKey));
+      if CompareMem(@PEM_PUBKEY_PKCS1[0], @AKey[0], Length(PEM_PUBKEY_PKCS1)) then
+        LRsa := PEM_read_bio_RSAPublicKey(LBio, nil, nil, nil)
+      else
+        LRsa := JoseSSL.PEM_read_bio_RSA_PUBKEY(LBio, nil, nil, nil);
+    end;
+
     Result := (LRsa <> nil);
     if Result then
       RSA_Free(LRsa);
@@ -299,5 +328,7 @@ begin
     RSA_free(LRsa);
   end;
 end;
+
+{$ENDIF}
 
 end.

@@ -1,7 +1,7 @@
 {******************************************************************************}
 {                                                                              }
 {  Delphi JOSE Library                                                         }
-{  Copyright (c) 2015-2021 Paolo Rossi                                         }
+{  Copyright (c) 2015 Paolo Rossi                                              }
 {  https://github.com/paolo-rossi/delphi-jose-jwt                              }
 {                                                                              }
 {******************************************************************************}
@@ -28,6 +28,8 @@
 /// </seealso>
 unit JOSE.Core.JWT;
 
+{$I ..\JOSE.inc}
+
 interface
 
 uses
@@ -37,6 +39,7 @@ uses
   System.Rtti,
   System.JSON,
   System.Generics.Collections,
+
   JOSE.Types.JSON,
   JOSE.Types.Bytes,
   JOSE.Core.Base,
@@ -45,9 +48,19 @@ uses
 
 type
   /// <summary>
+  ///   Standard Header Parameters Names
+  /// </summary>
+  THeaderNames = class
+  public const
+    HEADER_TYPE = 'typ';
+    ALGORITHM = 'alg';
+    KEY_ID = 'kid';
+  end;
+
+  /// <summary>
   ///   Header part of the JWT
   /// </summary>
-  TJWTHeader = class sealed(TJOSEBase)
+  TJWTHeader = class(TJOSEBase)
   private
     function GetAlgorithm: string;
     function GetHeaderType: string;
@@ -56,11 +69,22 @@ type
     function GetKeyID: string;
     procedure SetKeyID(const Value: string);
   public
+    constructor Create; overload; virtual;
+    constructor Create(const AType: string); overload; virtual;
+
+    procedure SetHeaderParam(const AName: string; const AValue: TValue);
+    procedure SetHeaderParamOfType<T>(const AName: string; const AValue: T);
+
     property Algorithm: string read GetAlgorithm write SetAlgorithm;
     property HeaderType: string read GetHeaderType write SetHeaderType;
     property KeyID: string read GetKeyID write SetKeyID;
   end;
 
+  TJWTHeaderClass = class of TJWTHeader;
+
+  /// <summary>
+  ///   Reserved (Standard) Claim Names
+  /// </summary>
   TReservedClaimNames = class
   public const
     AUDIENCE   = 'aud';
@@ -105,15 +129,13 @@ type
     function GetHasNotBefore: Boolean;
     function GetHasSubject: Boolean;
 
-    function ClaimExists(const AClaimName: string): Boolean;
     function GetAudienceArray: TArray<string>;
     procedure SetAudienceArray(const AValue: TArray<string>);
   public
     constructor Create; virtual;
 
-    procedure SetAsJSON(AClaims: TJSONObject); overload;
-    procedure SetAsJSON(const AClaims: string); overload;
-
+    function ClaimExists(const AClaimName: string): Boolean;
+    procedure SetClaim(const AName: string; const AValue: TValue);
     procedure SetClaimOfType<T>(const AName: string; const AValue: T);
     function GenerateJWTId(ANumberOfBytes: Integer = 16): string;
 
@@ -148,13 +170,19 @@ type
   public
     constructor Create; overload;
     constructor Create(AClaimsClass: TJWTClaimsClass); overload;
+    constructor Create(AHeaderClass: TJWTHeaderClass; AClaimsClass: TJWTClaimsClass); overload;
     destructor Destroy; override;
 
+    function Clone: TJWT;
     procedure Clear;
+
+    function HeaderClass: TJWTHeaderClass;
+    function ClaimClass: TJWTClaimsClass;
 
     function GetClaimsAs<T: TJWTClaims>: T; deprecated;
     function ClaimsAs<T: TJWTClaims>: T;
-
+    function HeaderAs<T: TJWTHeader>: T;
+  public
     property Header: TJWTHeader read FHeader;
     property Claims: TJWTClaims read FClaims;
     property Verified: Boolean read FVerified write FVerified;
@@ -165,9 +193,50 @@ implementation
 uses
   JOSE.Encoding.Base64;
 
+constructor TJWT.Create;
+begin
+  Create(TJWTHeader, TJWTClaims);
+end;
+
+constructor TJWT.Create(AClaimsClass: TJWTClaimsClass);
+begin
+  Create(TJWTHeader, AClaimsClass);
+end;
+
+constructor TJWT.Create(AHeaderClass: TJWTHeaderClass; AClaimsClass: TJWTClaimsClass);
+begin
+  FHeader := AHeaderClass.Create;
+  if AClaimsClass = nil then
+    FClaims := TJWTClaims.Create
+  else
+    FClaims := AClaimsClass.Create;
+end;
+
+destructor TJWT.Destroy;
+begin
+  FClaims.Free;
+  FHeader.Free;
+  inherited;
+end;
+
+function TJWT.ClaimClass: TJWTClaimsClass;
+begin
+  Result := TJWTClaimsClass(FClaims.ClassType);
+end;
+
 function TJWT.GetClaimsAs<T>: T;
 begin
   Result := FClaims as T;
+end;
+
+function TJWT.HeaderAs<T>: T;
+begin
+  Result := FHeader as T;
+end;
+
+function TJWT.HeaderClass: TJWTHeaderClass;
+begin
+  Result := TJWTHeaderClass(FHeader.ClassType);
 end;
 
 function TJWT.ClaimsAs<T>: T;
@@ -182,26 +251,25 @@ begin
   Verified := False;
 end;
 
-constructor TJWT.Create(AClaimsClass: TJWTClaimsClass);
+function TJWT.Clone: TJWT;
 begin
-  FHeader := TJWTHeader.Create;
-  FHeader.HeaderType := 'JWT';
-  FClaims := AClaimsClass.Create;
-end;
-
-constructor TJWT.Create;
-begin
-  Create(TJWTClaims);
-end;
-
-destructor TJWT.Destroy;
-begin
-  FHeader.Free;
-  FClaims.Free;
-  inherited;
+  Result := TJWT.Create(Self.HeaderClass, Self.ClaimClass);
+  try
+    Result.Header.Assign(FHeader);
+    Result.Claims.Assign(FClaims);
+    Result.Verified := FVerified;
+  except
+    Result.Free;
+    raise;
+  end;
 end;
 
 { TJWTClaims }
+
+procedure TJWTClaims.SetClaim(const AName: string; const AValue: TValue);
+begin
+  TJSONUtils.SetJSONRttiValue(AName, AValue, FJSON);
+end;
 
 procedure TJWTClaims.SetClaimOfType<T>(const AName: string; const AValue: T);
 begin
@@ -316,20 +384,6 @@ begin
   Result := TJSONUtils.GetJSONValue(TReservedClaimNames.SUBJECT, FJSON).AsString;
 end;
 
-procedure TJWTClaims.SetAsJSON(const AClaims: string);
-var
-  LJSON: TJSONObject;
-begin
-  LJSON := FJSON.ParseJSONValue(AClaims) as TJSONObject;
-  SetAsJSON(LJSON);
-end;
-
-procedure TJWTClaims.SetAsJSON(AClaims: TJSONObject);
-begin
-  FJSON.Free;
-  FJSON := AClaims;
-end;
-
 procedure TJWTClaims.SetAudience(const AValue: string);
 var
   LAudienceArray: TArray<string>;
@@ -412,6 +466,17 @@ end;
 
 { TJWTHeader }
 
+constructor TJWTHeader.Create;
+begin
+  Create('JWT');
+end;
+
+constructor TJWTHeader.Create(const AType: string);
+begin
+  inherited Create;
+  HeaderType := AType;
+end;
+
 function TJWTHeader.GetAlgorithm: string;
 begin
   Result := TJSONUtils.GetJSONValue(THeaderNames.ALGORITHM, FJSON).AsString;
@@ -430,6 +495,16 @@ end;
 procedure TJWTHeader.SetAlgorithm(const Value: string);
 begin
   TJSONUtils.SetJSONValueFrom<string>(THeaderNames.ALGORITHM, Value, FJSON);
+end;
+
+procedure TJWTHeader.SetHeaderParam(const AName: string; const AValue: TValue);
+begin
+  TJSONUtils.SetJSONRttiValue(AName, AValue, FJSON);
+end;
+
+procedure TJWTHeader.SetHeaderParamOfType<T>(const AName: string; const AValue: T);
+begin
+  AddPairOfType<T>(AName, AValue);
 end;
 
 procedure TJWTHeader.SetHeaderType(Value: string);

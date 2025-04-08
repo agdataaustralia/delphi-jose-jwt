@@ -1,7 +1,7 @@
 {******************************************************************************}
 {                                                                              }
 {  Delphi JOSE Library                                                         }
-{  Copyright (c) 2015-2021 Paolo Rossi                                         }
+{  Copyright (c) 2015 Paolo Rossi                                              }
 {  https://github.com/paolo-rossi/delphi-jose-jwt                              }
 {                                                                              }
 {******************************************************************************}
@@ -27,6 +27,8 @@
 ///   JWA RFC Document
 /// </seealso>
 unit JOSE.Core.JWA.Signing;
+
+{$I ..\JOSE.inc}
 
 interface
 
@@ -60,7 +62,7 @@ type
 
   TUnsecureNoneAlgorithm = class(TJOSEAlgorithm, IJOSESigningAlgorithm)
   private
-    const CANNOT_HAVE_KEY = 'Unsecured JWS (%s=%s) must not use a key';
+    const CANNOT_HAVE_KEY = 'Unsecure JWS (alg=None) must not use a key';
     procedure ValidateKey(const AKey: TJOSEBytes);
   public
     constructor Create;
@@ -87,6 +89,8 @@ type
     procedure ValidateSigningKey(const AKey: TJOSEBytes);
     procedure ValidateVerificationKey(const AKey: TJOSEBytes);
   end;
+
+{$IFDEF RSA_SIGNING}
 
   TRSAUsingSHAAlgorithm = class(TJOSEAlgorithm, IJOSESigningAlgorithm)
   private
@@ -123,6 +127,7 @@ type
     procedure ValidateVerificationKey(const AKey: TJOSEBytes);
   end;
 
+{$ENDIF}
 
 implementation
 
@@ -237,8 +242,7 @@ end;
 procedure TUnsecureNoneAlgorithm.ValidateKey(const AKey: TJOSEBytes);
 begin
   if not AKey.IsEmpty then
-    raise EJOSEException.Create(Format(CANNOT_HAVE_KEY,
-      [THeaderNames.ALGORITHM, TJOSEAlgorithmId.None.AsString]));
+    raise EJOSEException.Create(CANNOT_HAVE_KEY);
 end;
 
 procedure TUnsecureNoneAlgorithm.ValidateSigningKey(const AKey: TJOSEBytes);
@@ -256,6 +260,8 @@ begin
   ValidateKey(AKey);
   Result := ASignature.IsEmpty;
 end;
+
+{$IFDEF RSA_SIGNING}
 
 { TRSAAlgorithm }
 
@@ -394,5 +400,7 @@ begin
   LDecodedSignature := TBase64.URLDecode(ASignature);
   Result := TECDSA.Verify(AInput, LDecodedSignature, AKey, FECDSAAlgorithm);
 end;
+
+{$ENDIF}
 
 end.
