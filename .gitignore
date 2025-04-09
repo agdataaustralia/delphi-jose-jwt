@@ -27,7 +27,6 @@
 *.dll
 *.bpl
 *.bpi
-*.dcp
 *.so
 *.apk
 *.drc
@@ -35,7 +34,6 @@
 *.dres
 *.rsm
 *.tds
-*.dcu
 *.lib
 *.a
 *.o
